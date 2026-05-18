@@ -47,13 +47,25 @@ let aCtx=null,bgNode=null;
 function initAudio(){
   if(aCtx)return;
   aCtx=new(window.AudioContext||window.webkitAudioContext)();
+  decodePending();
 }
 function loadImg(k,u){return new Promise(r=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>{A[k]=i;r()};i.onerror=r;i.src=u});}
+const pendingAudio={};
 function loadAudio(k,u){
   return new Promise(r=>{
-    if(!aCtx){r();return;}
-    fetch(u).then(x=>x.arrayBuffer()).then(b=>aCtx.decodeAudioData(b,d=>{S[k]=d;r()},r)).catch(r);
+    // Stocker le buffer raw, decoder apres init audio
+    fetch(u).then(x=>x.arrayBuffer()).then(b=>{
+      pendingAudio[k]=b;
+      if(aCtx)aCtx.decodeAudioData(b.slice(0),d=>{S[k]=d},()=>{});
+      r();
+    }).catch(r);
   });
+}
+function decodePending(){
+  if(!aCtx)return;
+  for(const[k,b] of Object.entries(pendingAudio)){
+    if(!S[k])aCtx.decodeAudioData(b.slice(0),d=>{S[k]=d},()=>{});
+  }
 }
 function snd(k,v=1){
   if(!aCtx||!S[k])return;
@@ -72,8 +84,10 @@ function stopMusic(){try{bgNode&&bgNode.stop()}catch(e){}bgNode=null;}
 
 async function loadAll(){
   const lbar=document.getElementById('lbar'),ltxt=document.getElementById('ltxt');
-  initAudio();
+  // Ne pas init audio ici — Safari bloque sans geste utilisateur
+  // On init au premier clic/touche
   const imgs=[
+    ['ts',`${RAW}/graphics/title_screen.png`],
     ['bg',`${RAW}/graphics/level_1.png`],
     ['mario',`${RAW}/graphics/mario_bros.png`],
     ['enemies',`${RAW}/graphics/smb_enemies_sheet.png`],
@@ -104,8 +118,11 @@ async function loadAll(){
 
 // ── Input ──────────────────────────────────────────────
 const K={};
-addEventListener('keydown',e=>{K[e.code]=true;aCtx?.state==='suspended'&&aCtx.resume();e.preventDefault()});
+addEventListener('keydown',e=>{K[e.code]=true;if(!aCtx)initAudio();aCtx?.state==='suspended'&&aCtx.resume();e.preventDefault()});
 addEventListener('keyup',e=>{K[e.code]=false});
+// Safari: unlock audio on any user gesture on the canvas
+canvas.addEventListener('click',()=>{if(!aCtx)initAudio();aCtx?.state==='suspended'&&aCtx.resume();});
+canvas.addEventListener('touchstart',()=>{if(!aCtx)initAudio();aCtx?.state==='suspended'&&aCtx.resume();},{passive:true});
 const isL=()=>K.ArrowLeft||K.KeyA;
 const isR=()=>K.ArrowRight||K.KeyD;
 const isJ=()=>K.Space||K.ArrowUp||K.KeyW;
@@ -188,7 +205,7 @@ let flyCoins=[],floatScore=[],mush=[];
 function spawnE(){
   return[[1600],[2050],[2500],[2550],[3100],[3150],[3800],[3850],
     [4600],[5000],[5050],[5500],[5550],[7000],[7050],[7500],[7550]]
-  .map(([x])=>({x,y:GY-32,w:32,h:32,vx:-1.5,vy:0,alive:true,stomped:false,sT:0,aF:0,aT:0,onGround:false}));
+  .map(([x])=>({x,y:GY-32,w:32,h:32,vx:-1.5,vy:0,alive:true,stomped:false,sT:0,aF:0,aT:0,onGround:false,active:false}));
 }
 let enemies=spawnE();
 
@@ -254,7 +271,7 @@ function drawBlocks(){
     const sx=c.x-camX;if(sx<-50||sx>SW+50)return;
     const bump=bmp(c);
     if(!A.tiles){ctx.fillStyle=c.used?'#888':'#e8a000';ctx.fillRect(sx,c.y+bump,40,40);return;}
-    const tx=c.used?432:(frame%24<8?352:frame%24<16?368:384);
+    const tx=c.used?432:(frame%24<8?384:frame%24<16?368:352);
     ctx.drawImage(A.tiles,tx,0,16,16,sx,c.y+bump,40,40);
   });
 }
@@ -262,8 +279,8 @@ function drawBlocks(){
 // ── Draw enemies ───────────────────────────────────────
 function drawEnemies(){
   enemies.forEach(e=>{
-    if(!e.alive)return;
-    const sx=e.x-camX;if(sx<-40||sx>SW+40)return;
+    if(!e.alive||!e.active)return;
+    const sx=e.x-camX;if(sx<-50||sx>SW+50)return;
     if(!A.enemies){ctx.fillStyle=e.stomped?'#600':'#a00';ctx.fillRect(sx,e.y,e.w,e.h);return;}
     const fx=e.stomped?32:(Math.floor(e.aF/8)%2)*16;
     ctx.drawImage(A.enemies,fx,4,16,16,sx,e.y,e.w,e.h);
@@ -316,18 +333,24 @@ function drawHUD(){
 
 // ── Title ──────────────────────────────────────────────
 function drawTitle(){
-  ctx.fillStyle='#6b8cff';ctx.fillRect(0,0,SW,SH);
-  ctx.fillStyle='#000080';ctx.fillRect(50,55,700,105);
-  ctx.fillStyle='#e86020';ctx.font='bold 50px "Courier New",monospace';
-  ctx.textAlign='center';ctx.fillText('SUPER MARIO BROS.',400,130);
-  ctx.fillStyle='#fff';ctx.font='18px "Courier New",monospace';
-  ctx.fillText('WORLD  1-1',400,220);
-  if(A.mario){ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(A.mario,80,32,15,16,328,255,60,64);ctx.restore();}
-  ctx.fillStyle='#fff';ctx.font='16px "Courier New",monospace';
-  if(frame%60<35)ctx.fillText('PRESS ANY KEY TO START',400,400);
-  ctx.font='12px "Courier New",monospace';ctx.fillStyle='#bbd';
-  ctx.fillText('← → Move    A/W/Space Jump    S Run',400,460);
-  ctx.textAlign='left';
+  // Fond: level_1.png debut — meme que jeu Python
+  if(A.bg){ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(A.bg,0,0,SW/BG,224,0,HH,SW,SH-HH);ctx.restore();}
+  else{ctx.fillStyle='#6b8cff';ctx.fillRect(0,HH,SW,SH-HH);}
+  // Logo box: title_screen.png crop (x=1,y=60,w=176,h=88) * 2.5 = 440x220
+  if(A.ts){
+    ctx.save();ctx.imageSmoothingEnabled=false;
+    ctx.drawImage(A.ts,1,60,176,88,180,80,440,220);
+    ctx.restore();
+  }
+  // Mario debout
+  if(A.mario){ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(A.mario,178,32,12,16,110,GY-40,30,40);ctx.restore();}
+  // Menu
+  ctx.fillStyle='#fff';ctx.font='bold 18px "Courier New",monospace';ctx.textAlign='center';
+  ctx.fillText('1 PLAYER GAME',400,355);
+  ctx.fillText('2 PLAYER GAME',400,400);
+  ctx.fillStyle='#ff0';ctx.font='20px monospace';ctx.fillText('►',330,355);
+  if(frame%60<35){ctx.fillStyle='#fff';ctx.font='13px "Courier New",monospace';ctx.fillText('PRESS ANY KEY',400,470);}
+  drawHUD();ctx.textAlign='left';
 }
 
 // ── Game Over ──────────────────────────────────────────
@@ -394,7 +417,10 @@ function updateEnemies(){
   enemies.forEach(e=>{
     if(!e.alive)return;
     const sx=e.x-camX;
-    if(sx>SW+300||sx<-300)return;
+    // Activer quand Mario approche (depuis la droite seulement)
+    if(!e.active&&sx<SW+80)e.active=true;
+    if(!e.active)return;
+    if(sx<-200){e.alive=false;return;}
     if(e.stomped){e.sT++;if(e.sT>40)e.alive=false;return;}
     e.vy=Math.min(e.vy+GR,MF);e.aT++;if(e.aT>8){e.aT=0;e.aF++;}
     e.x+=e.vx;
