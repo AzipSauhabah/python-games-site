@@ -1,97 +1,36 @@
-# AzipSauhabah — Python Game Projects (NAS Edition)
+# Python Game Projects — Web Edition
 
-Site vitrine + jeux jouables en WebAssembly, hébergé sur NAS Synology.
+Interactive arcade site hosting classic Python/Pygame games ported to JavaScript Canvas.
 
-## Architecture
+---
 
-```
-/volume1/docker/python-games/
-├── docker-compose.yml        ← démarrage du conteneur Nginx
-├── nginx/
-│   └── nginx.conf            ← headers COOP/COEP requis pour WASM
-├── scripts/
-│   └── build_mario.sh        ← build pygbag → WASM
-└── frontend/
-    ├── index.html            ← site vitrine
-    └── games/
-        └── mario/            ← build WASM généré par pygbag
-            ├── index.html
-            ├── Mario-Level-1-master.apk
-            └── ...
-```
+## ⚠️ Legal Disclaimer
 
-## Déploiement initial
+This site hosts **non-commercial, educational fan recreations** of classic video games.
 
-### 1. Copier les fichiers sur le NAS
+**Super Mario Bros.** (NES, 1985) and all associated characters, sprites, sounds and music
+are the exclusive intellectual property of **Nintendo Co., Ltd.**
+Nintendo® and Super Mario Bros.® are registered trademarks of Nintendo Co., Ltd.
 
-```bash
-scp -r python-games-site/ sauhabahaz@192.168.1.47:/volume1/docker/python-games
-```
+This project is:
+- ❌ Not affiliated with or endorsed by Nintendo
+- ❌ Not monetized in any way
+- ✅ Created solely for educational and personal purposes
+- ✅ Not distributed commercially
 
-### 2. Builder Mario en WASM (une seule fois)
+If you are a rights holder and wish to request removal of any content,
+it will be taken down immediately upon request.
 
-```bash
-ssh sauhabahaz@192.168.1.47
-cd /volume1/docker/python-games
-sudo bash scripts/build_mario.sh
-```
+---
 
-> ⚠️ Le premier build télécharge CPython WASM (~30 MB). Durée : 3-5 min.
-> Les builds suivants sont beaucoup plus rapides (cache).
+## Stack
 
-### 3. Démarrer le conteneur Nginx
+| Layer | Technology |
+|---|---|
+| Frontend | HTML5 Canvas · JavaScript |
+| Server | Docker · Nginx |
+| Tunnel | Cloudflare |
 
-```bash
-cd /volume1/docker/python-games
-sudo docker-compose up -d
-```
+## Source Code
 
-### 4. Vérifier que ça tourne
-
-```bash
-curl http://192.168.1.47:3100
-# Doit retourner le HTML du site
-```
-
-## Cloudflare Tunnel
-
-Ajouter une route dans ton tunnel existant :
-
-- **Subdomain** : `games`
-- **Domain** : `sauhabah-advisory.eu`
-- **Service** : `http://localhost:3100`
-
-Le jeu sera accessible sur : **https://games.sauhabah-advisory.eu**
-
-## Mise à jour du repo
-
-Après un `git push` sur le repo PythonProjects :
-
-```bash
-ssh sauhabahaz@192.168.1.47
-cd /volume1/docker/python-games
-sudo bash scripts/build_mario.sh   # rebuid Mario
-sudo docker-compose restart         # rechargement Nginx
-```
-
-## Ajouter un nouveau jeu (ex: Pacman)
-
-1. Dupliquer `scripts/build_mario.sh` → `scripts/build_pacman.sh`
-2. Changer `MARIO_DIR` → `Pacman-master`
-3. Adapter le `main.py` async si besoin
-4. Le jeu apparaît dans le dossier `games/pacman/`
-5. Dans `frontend/index.html`, passer `playable: true` pour Pacman
-
-## Ports
-
-| Service       | Port NAS | URL externe                              |
-|---------------|----------|------------------------------------------|
-| python-games  | 3100     | https://games.sauhabah-advisory.eu       |
-
-## Notes importantes
-
-- Les headers **COOP/COEP** dans nginx.conf sont **obligatoires** pour que
-  `SharedArrayBuffer` fonctionne (requis par pygbag/WASM).
-- Ne pas exposer le port 5432 (conflit NAS natif) — sans objet ici.
-- Le build pygbag doit être fait sur une machine avec accès internet
-  (le NAS télécharge les binaires WASM depuis cdn.pygbag.org).
+Python originals: **github.com/AzipSauhabah/PythonProjects**
