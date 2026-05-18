@@ -271,7 +271,7 @@ function drawBlocks(){
     const sx=c.x-camX;if(sx<-50||sx>SW+50)return;
     const bump=bmp(c);
     if(!A.tiles){ctx.fillStyle=c.used?'#888':'#e8a000';ctx.fillRect(sx,c.y+bump,40,40);return;}
-    const tx=c.used?432:(frame%24<8?384:frame%24<16?368:352);
+    const tx=c.used?432:(frame%30<10?384:frame%30<20?400:416);
     ctx.drawImage(A.tiles,tx,0,16,16,sx,c.y+bump,40,40);
   });
 }
@@ -400,6 +400,8 @@ function updateMario(){
   moveEntity(M,getAllSolids());
   camX=Math.max(0,Math.min(M.x-300,LW-SW));
   if(M.y>700)dieMario();
+  // Sécurité: si Mario est dans le sol après transition big, le remonter
+  if(M.y+M.h>GY+5&&M.onGround){M.y=GY-M.h;}
   if(M.inv){M.invT--;if(M.invT<=0)M.inv=false;}
   M.aT++;if(M.aT>7){M.aT=0;M.aF++;}
   tiTick++;if(tiTick>40){tiTick=0;timer=Math.max(0,timer-1);}
@@ -447,7 +449,14 @@ function updateMush(){
     for(const s of sl){if(ov(m,s)){if(m.vx>0)m.x=s.x-m.w;else m.x=s.x+m.w;m.vx*=-1;}}
     m.y+=m.vy;
     for(const s of sl){if(ov(m,s)){if(m.vy>0){m.y=s.y-m.h;m.vy=0;}else{m.y=s.y+m.h;m.vy=0;}}}
-    if(ov(M,m)){m.alive=false;M.big=true;score+=1000;addFS(m.x,m.y,1000);snd('powerup');}
+    if(ov(M,m)){
+      m.alive=false;
+      if(!M.big){
+        M.big=true;
+        M.y-=32; // ajuster la position Y pour compenser la hauteur supplementaire
+      }
+      score+=1000;addFS(m.x,m.y,1000);snd('powerup');
+    }
     if(m.y>700)m.alive=false;
   });
 }
