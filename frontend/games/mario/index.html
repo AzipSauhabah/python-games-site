@@ -1,438 +1,985 @@
-<html lang="en-us"><script src="/cdn/0.9.3/pythons.js" type=module id="site" data-python="python3.12" data-LINES=42 data-COLUMNS=132 data-os="vtx,snd,gui" async defer>#<!--
-
-print("""
-Loading Super Mario Bros - Level 1 from mario-level-1-master.apk
-    Pygbag Version : 0.9.3
-    Template Version : 0.9.3
-    Python  : 3.12
-    CDN URL : /cdn/0.9.3/
-    Screen  : 800x600
-    Title   : Super Mario Bros - Level 1
-    Folder  : mario-level-1-master
-    Authors : pgw
-    SPDX-License-Identifier: cookiecutter.spdx
-
-""")
-
-import sys
-import asyncio
-import platform
-import json
-from pathlib import Path
-
-# do not rename
-async def custom_site():
-    import embed
-    platform.document.body.style.background = "#7f7f7f"
-
-    platform.window.transfer.hidden = true
-    platform.window.canvas.style.visibility = "visible"
-
-
-    bundle = "mario-level-1-master"
-
-    # the C or js loader could do that but be explicit.
-    appdir = Path(f"/data/data/{bundle}") # /data/data/mario-level-1-master
-    appdir.mkdir()
-
-
-    # unpack filesystem from compressed archive into work dir
-    if platform.window.location.host.find('.itch.zone')>0:
-        import zipfile
-        async with platform.fopen("mario-level-1-master.apk", "rb") as archive:
-            with zipfile.ZipFile(archive) as zip_ref:
-                zip_ref.extractall(appdir.as_posix())
-    else:
-        import tarfile
-        async with platform.fopen("mario-level-1-master.tar.gz", "rb") as archive:
-            tar = tarfile.open(fileobj=archive, mode="r:gz")
-            tar.extractall(path=appdir.as_posix(), filter='tar')
-            tar.close()
-
-    # preloader will change to work dir and prepend it to sys.path
-    platform.run_main(PyConfig, loaderhome= appdir / "assets", loadermain=None)
-
-
-    # wait preloading complete : that includes images and wasm compilation of bundled modules
-    while embed.counter()<0:
-        await asyncio.sleep(.1)
-
-    main = appdir / "assets" / "main.py"
-
-    # TODO: test for window.webkitAudioContext and block aio loop until gesture if accessing media manager play
-    # before a gesture is recorded ( touch or click )
-
-    # test/wait user media interaction
-    if not platform.window.MM.UME:
-
-        # now that apk is mounted we have access to font cache
-        # but we need to fill __file__ that is not yet set
-        __import__(__name__).__file__ = main
-
-        # now make a prompt
-        msg  = "Ready to start ! Please click/touch page"
-        platform.window.infobox.innerText = msg
-        print("\n"*4, f"    * Waiting for media user engagement. {msg} *" , "\n"*4)
-
-        while not platform.window.MM.UME:
-            await asyncio.sleep(.1)
-
-    # start async top level machinery if not started and add a console in any case if requested.
-    await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)
-
-    # now that apk is mounted we have access to font cache
-    # but we need to fill __file__/__name__ that are not yet set
-    __import__(__name__).__file__ = main
-
-
-    def ui_callback(pkg):
-        platform.window.infobox.innerText = f"installing {pkg}"
-
-    await shell.source(main, callback=ui_callback)
-
-    # if you don't reach that step
-    # your main.py has an infinite sync loop somewhere !
-
-    platform.window.infobox.style.display = "none"
-    platform.window.config.gui_divider = 1
-    platform.window.window_resize()
-    print("default.tmpl: done")
-
-    shell.interactive()
-
-asyncio.run( custom_site() )
-
-
-
-
-
-
-
-
-
-
-
-
-# BEGIN BLOCK
-#
-# now this is the html part you can (and should) customize
-# It is not mandatory : pygame-script when it reads the first line (also called
-# shebang ) of above code create absolute minimal widget set
-# required for running with default rules
-#
-# do not alter that comment block it is separating python code from html code
-# =============================================================================
-# --></script><head><!--
-//=============================================================================
-//
-//
-//
-//
-//
-//
-//
-
-    {%- if cookiecutter.comment != "" -%}
-{{cookiecutter.comment}}
-    {% endif %}
-
---><script type="application/javascript">
-// END BLOCK
-
-
-
-// this dict is available under PyConfig.config from __main__
-
-config = {
-    xtermjs : "1" ,
-    _sdl2 : "canvas",
-    user_canvas : 0,
-    user_canvas_managed : 0,
-    gui_divider : 2,
-    ume_block : 1,
-    can_close : 0,
-    archive : "mario-level-1-master",
-    gui_debug : 2,
-    cdn : "/cdn/0.9.3/",
-    autorun : 0,
-    PYBUILD : "3.12",
-    fb_ar   :  1.77,
-    fb_width : "800",
-    fb_height : "600"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Super Mario Bros — World 1-1</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { width:100%; height:100%; background:#000; overflow:hidden; }
+canvas { display:block; image-rendering:pixelated; image-rendering:crisp-edges; }
+#loading {
+  position:fixed; inset:0; background:#5c94fc;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-family:monospace; color:#fff; gap:16px; z-index:100;
 }
-
-function show_infobox() {
-    infobox.style.display = "block";
-
-    // Measure box
-    const w = infobox.offsetWidth;
-    const h = infobox.offsetHeight;
-
-    // Center in viewport
-    const left = (window.innerWidth - w) / 2;
-    const top = (window.innerHeight - h) / 2;
-
-    infobox.style.left = left + "px";
-    infobox.style.top = top + "px";
-}
-
-</script>
-
-    <title>Super Mario Bros - Level 1</title>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="viewport" content="height=device-height, initial-scale=1.0">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes"/>
-
-
-    <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
-
-    <style>
-        #status {
-            display: inline-block;
-            vertical-align: top;
-            margin-top: 20px;
-            margin-left: 30px;
-            font-weight: bold;
-            color: rgb(120, 120, 120);
-        }
-
-        #progress {
-            height: 20px;
-            width: 300px;
-        }
-
-        #infobox {
-            position: fixed; /* center relative to viewport */
-            background: green;
-            color: blue;
-            font-weight: bold;
-            padding: 12px 24px;
- /*           display: none; */
-            z-index: 999999;
-        }
-        div.emscripten { text-align: center; }
-        div.emscripten_border { border: 1px solid black; }
-        div.thick_border { border: 4px solid black; }
-
-        /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-        /* average size of droid screen 470dp x 320dp  */
-        canvas.emscripten {
-            border: 0px none;
-            background-color: transparent;
-            width: 100%;
-            height: 100%;
-            z-index: 5;
-
-            padding: 0;
-            margin: 0 auto;
-
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
-        }
-
-        body {
-            font-family: arial;
-            margin: 0;
-            padding: none;
-            background-color:powderblue;
-        }
-
-        .topright{
-           position:absolute;
-           top:0px;
-           right:0px;
-        }
-
-        .bottomright {
-            position:absolute;
-            top: 40%;
-            right: 0px;
-        }
-
-        .center {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .trinfo{
-           position: relative;
-           right: 0px;
-           border: 1px solid black;
-        }
-
-        .framed{
-           position: relative;
-           top: 150px;
-           right: 10px;
-           border: 1px solid black;
-        }
-    </style>
-
-    <script>
-/*
-        if (navigator.serviceWorker)
-            navigator.serviceWorker.register("/cdn/0.9.3/pygbag0.9.3.js")
-        else
-            console.warn("Service workers not supported")
-*/
-    </script>
-
-    <script src="/cdn/0.9.3/browserfs.min.js"></script>
-
+#loading-bar-bg { width:200px; height:8px; background:rgba(0,0,0,.3); border-radius:4px; }
+#loading-bar { height:100%; width:0%; background:#fff; border-radius:4px; transition:width .1s; }
+#loading p { font-size:14px; letter-spacing:2px; }
+</style>
 </head>
-
 <body>
+<div id="loading">
+  <p>SUPER MARIO BROS</p>
+  <div id="loading-bar-bg"><div id="loading-bar"></div></div>
+  <p id="loading-txt" style="font-size:11px;opacity:.7">Loading assets...</p>
+</div>
+<canvas id="c"></canvas>
 
-    <div id="transfer" align=center>
-<!--        <div class="spinner" id='spinner'></div> -->
-        <div class="emscripten" id="status">Downloading...</div>
-        <div class="emscripten">
-            <progress value="0" max="100" id="progress"></progress>
-        </div>
-    </div>
+<script>
+// ═══════════════════════════════════════════════════════════
+//  SUPER MARIO BROS — World 1-1  (JavaScript Canvas Edition)
+//  Assets: github.com/AzipSauhabah/PythonProjects
+// ═══════════════════════════════════════════════════════════
 
+const GITHUB_RAW = 'https://raw.githubusercontent.com/AzipSauhabah/PythonProjects/main/Mario-Level-1-master/resources';
+const SCALE = 2.5;
+const TILE = 16;
+const TS = TILE * SCALE; // 40px per tile
 
+// ── Canvas setup ──────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
 
-    <canvas class="emscripten" id="canvas"
-width="1px"
-height="1px"
-    oncontextmenu="event.preventDefault()" tabindex=1>
-    </canvas>
+function resize() {
+  const W = window.innerWidth, H = window.innerHeight;
+  const scale = Math.min(W/800, H/600);
+  canvas.width = 800; canvas.height = 600;
+  canvas.style.width = (800*scale)+'px';
+  canvas.style.height = (600*scale)+'px';
+  canvas.style.position = 'absolute';
+  canvas.style.left = ((W - 800*scale)/2)+'px';
+  canvas.style.top = ((H - 600*scale)/2)+'px';
+}
+window.addEventListener('resize', resize);
+resize();
 
-    <canvas class="emscripten" id="canvas3d"
-width="800px"
-height="600px"
-    oncontextmenu="event.preventDefault()" tabindex=1 hidden>
-    </canvas>
+// ── Asset loading ─────────────────────────────────────────
+const ASSETS = {};
+const SOUNDS = {};
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
 
-    <div id="infobox">Loading, please wait ...</div>
+function loadImg(key, url) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { ASSETS[key] = img; res(); };
+    img.onerror = () => { console.warn('Failed:', url); res(); };
+    img.src = url;
+  });
+}
 
-    <div id=html></div>
+function loadAudio(key, url) {
+  return new Promise((res) => {
+    fetch(url)
+      .then(r => r.arrayBuffer())
+      .then(buf => {
+        if (audioCtx) audioCtx.decodeAudioData(buf, decoded => { SOUNDS[key] = decoded; res(); }, () => res());
+        else res();
+      })
+      .catch(() => res());
+  });
+}
 
-    <div id=crt  class=bottomright >
+function playSound(key, volume=1) {
+  if (!audioCtx || !SOUNDS[key]) return;
+  const src = audioCtx.createBufferSource();
+  src.buffer = SOUNDS[key];
+  const gain = audioCtx.createGain();
+  gain.gain.value = volume;
+  src.connect(gain);
+  gain.connect(audioCtx.destination);
+  src.start(0);
+}
 
-        <div id="system" hidden>
-            <div class="button-container">
-                <button id="aiostop" disabled>AIO ⏏︎</button>
-                <button id="aiopaused_true" disabled>AIO ■</button>
-                <button id="aiopaused_false" disabled>AIO ▶</button>
-                <button id="pygame_mixer_music_pause" disabled>Music ■</button>
-            </div>
+let bgMusic = null;
+function playMusic(key, loop=true) {
+  if (!audioCtx || !SOUNDS[key]) return;
+  stopMusic();
+  bgMusic = audioCtx.createBufferSource();
+  bgMusic.buffer = SOUNDS[key];
+  bgMusic.loop = loop;
+  const gain = audioCtx.createGain();
+  gain.gain.value = 0.4;
+  bgMusic.connect(gain);
+  gain.connect(audioCtx.destination);
+  bgMusic.start(0);
+}
 
-            <div class="button-container">
-                <div id=load_min>min</div>
-                <div id=load_avg>avg</div>
-                <div id=load_max>max</div>
-              <button id="load_rst" disabled>RESET</button>
-            </div>
+function stopMusic() {
+  if (bgMusic) { try { bgMusic.stop(); } catch(e){} bgMusic = null; }
+}
 
-            <div id="level">(battery level unknown)</div>
-            <div id="stateBattery">(charging state unknown)</div>
+async function loadAll() {
+  const bar = document.getElementById('loading-bar');
+  const txt = document.getElementById('loading-txt');
 
-        </div>
+  const imgs = [
+    ['bg', `${GITHUB_RAW}/graphics/level_1.png`],
+    ['mario', `${GITHUB_RAW}/graphics/mario_bros.png`],
+    ['enemies', `${GITHUB_RAW}/graphics/smb_enemies_sheet.png`],
+    ['tiles', `${GITHUB_RAW}/graphics/tile_set.png`],
+    ['items', `${GITHUB_RAW}/graphics/item_objects.png`],
+    ['text', `${GITHUB_RAW}/graphics/text_images.png`],
+    ['title', `${GITHUB_RAW}/graphics/title_screen.png`],
+  ];
 
-        <div id=box class="emscripten_border" hidden=true>
+  const snds = [
+    ['theme', `${GITHUB_RAW}/music/main_theme.ogg`],
+    ['gameover', `${GITHUB_RAW}/music/game_over.ogg`],
+    ['stageclear', `${GITHUB_RAW}/music/stage_clear.wav`],
+    ['death', `${GITHUB_RAW}/music/death.wav`],
+    ['jump_small', `${GITHUB_RAW}/sound/small_jump.ogg`],
+    ['jump_big', `${GITHUB_RAW}/sound/big_jump.ogg`],
+    ['coin', `${GITHUB_RAW}/sound/coin.ogg`],
+    ['stomp', `${GITHUB_RAW}/sound/stomp.ogg`],
+    ['powerup', `${GITHUB_RAW}/sound/powerup.ogg`],
+    ['powerup_appears', `${GITHUB_RAW}/sound/powerup_appears.ogg`],
+    ['bump', `${GITHUB_RAW}/sound/bump.ogg`],
+    ['brick', `${GITHUB_RAW}/sound/brick_smash.ogg`],
+    ['flagpole', `${GITHUB_RAW}/music/flagpole.wav`],
+    ['one_up', `${GITHUB_RAW}/sound/one_up.ogg`],
+  ];
 
-            <div id="info" class="trinfo"></div>
+  const total = imgs.length + snds.length;
+  let done = 0;
+  const tick = () => { done++; bar.style.width = (done/total*100)+'%'; };
 
-            <iframe id="iframe" class="framed" name="iframe"
-width="470px" height="90%"
-allowtransparency="true"
-style="z-index: 10;"
-style="background: #FFFFFF;"
-frameborder="1"
-                allowfullscreen="true"
-                webkitallowfullscreen="true"
-                msallowfullscreen="true"
-                mozallowfullscreen="true"
-                sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
-                allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
-                src="/cdn/0.9.3/empty.html"
-                scrolling="yes">
-            </iframe>
-        </div>
+  await Promise.all(imgs.map(([k,u]) => loadImg(k,u).then(tick)));
+  txt.textContent = 'Loading audio...';
+  await Promise.all(snds.map(([k,u]) => loadAudio(k,u).then(tick)));
 
-    </div>
+  document.getElementById('loading').style.display = 'none';
+}
 
+// ── Sprite helper ─────────────────────────────────────────
+function sprite(img, sx, sy, sw, sh, dx, dy, dw, dh) {
+  if (!img) return;
+  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw || sw*SCALE, dh || sh*SCALE);
+}
 
-    <div id="dlg" hidden>
-        <input type="file" id="dlg_multifile" multiple accept="image/*">
-        <label for="dlg_multifile">Select files</label>
-    </div>
+// ── Input ─────────────────────────────────────────────────
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  if (!audioCtx) { audioCtx = new AudioCtx(); }
+  e.preventDefault();
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
 
-    <div id="pyconsole">
-        <div id="terminal" tabIndex=1 align="left"></div>
-    </div>
+// touch
+let touchLeft=false, touchRight=false, touchJump=false;
+canvas.addEventListener('touchstart', e => {
+  if (!audioCtx) { audioCtx = new AudioCtx(); }
+  const x = e.touches[0].clientX / canvas.offsetWidth;
+  const y = e.touches[0].clientY / canvas.offsetHeight;
+  if (y > 0.7) {
+    if (x < 0.3) touchLeft=true;
+    else if (x < 0.6) touchRight=true;
+    else touchJump=true;
+  }
+}, {passive:true});
+canvas.addEventListener('touchend', () => { touchLeft=touchRight=touchJump=false; });
 
-    <script type="application/javascript">
+function isLeft()  { return keys['ArrowLeft']  || keys['KeyA'] || touchLeft; }
+function isRight() { return keys['ArrowRight'] || keys['KeyD'] || touchRight; }
+function isJump()  { return keys['Space'] || keys['ArrowUp'] || keys['KeyW'] || touchJump; }
+function isRun()   { return keys['ShiftLeft'] || keys['ShiftRight'] || keys['KeyS']; }
 
-    globalThis.__canvas_resized = (self, ecw, ech) => {
-        console.warn("TODO: panda3d canvas monitor", self, ecw, ech)
+// ── Constants ─────────────────────────────────────────────
+const GRAVITY = 0.5;
+const JUMP_FORCE = -12;
+const FAST_JUMP = -14;
+const WALK_SPEED = 3;
+const RUN_SPEED = 5;
+const MAX_FALL = 12;
+const GROUND_Y = 538; // pixel Y of ground surface (600 - 62)
+const LEVEL_W = 9073; // total level width in pixels (scaled)
+const SCREEN_W = 800;
+const SCREEN_H = 600;
+
+// ── Game State ────────────────────────────────────────────
+let state = 'title'; // title | playing | dead | levelclear | gameover
+let score = 0, coins = 0, lives = 3, timer = 400;
+let timerTick = 0;
+let cameraX = 0;
+let frameCount = 0;
+let musicStarted = false;
+
+// ── Mario ─────────────────────────────────────────────────
+const mario = {
+  x: 96, y: GROUND_Y - 40,
+  w: 30, h: 40,
+  vx: 0, vy: 0,
+  onGround: false,
+  jumping: false,
+  jumpHeld: false,
+  facingRight: true,
+  big: false,
+  fire: false,
+  dead: false,
+  invincible: false,
+  invTimer: 0,
+  animFrame: 0,
+  animTimer: 0,
+  state: 'stand', // stand walk jump fall dead
+  flagTimer: 0,
+  flagY: 0,
+};
+
+// ── Sprites coords (from mario_bros.png 384x528) ──────────
+// Small Mario frames (y=32)
+const MARIO_SMALL = {
+  stand:  {x:178, y:32,  w:12, h:16},
+  walk1:  {x:80,  y:32,  w:15, h:16},
+  walk2:  {x:96,  y:32,  w:16, h:16},
+  walk3:  {x:112, y:32,  w:16, h:16},
+  jump:   {x:144, y:32,  w:16, h:16},
+  skid:   {x:130, y:32,  w:14, h:16},
+  death:  {x:160, y:32,  w:15, h:16},
+};
+// Big Mario (y=0)
+const MARIO_BIG = {
+  stand:  {x:176, y:0,   w:16, h:32},
+  walk1:  {x:81,  y:0,   w:16, h:32},
+  walk2:  {x:97,  y:0,   w:16, h:32},
+  walk3:  {x:113, y:0,   w:16, h:32},
+  jump:   {x:145, y:0,   w:16, h:32},
+  skid:   {x:130, y:0,   w:14, h:32},
+};
+
+function getMarioFrame() {
+  if (mario.dead) return MARIO_SMALL.death;
+  const frames = mario.big ? MARIO_BIG : MARIO_SMALL;
+  if (!mario.onGround) return frames.jump;
+  if (mario.state === 'skid') return frames.skid;
+  if (mario.vx === 0) return frames.stand;
+  const walkFrames = [frames.walk1, frames.walk2, frames.walk3, frames.walk2];
+  return walkFrames[mario.animFrame % 4];
+}
+
+function drawMario() {
+  if (mario.invincible && Math.floor(frameCount/4)%2===0) return;
+  const f = getMarioFrame();
+  if (!f || !ASSETS.mario) return;
+  const sx = mario.x - cameraX;
+  const sy = mario.y;
+  const scale = mario.big ? SCALE : SCALE;
+  const dw = f.w * scale;
+  const dh = f.h * scale;
+
+  ctx.save();
+  if (!mario.facingRight) {
+    ctx.translate(sx + dw/2, sy);
+    ctx.scale(-1, 1);
+    ctx.drawImage(ASSETS.mario, f.x, f.y, f.w, f.h, -dw/2, 0, dw, dh);
+  } else {
+    ctx.drawImage(ASSETS.mario, f.x, f.y, f.w, f.h, sx, sy, dw, dh);
+  }
+  ctx.restore();
+}
+
+// ── Level geometry ────────────────────────────────────────
+// Ground segments (from level1.py, scaled by 2.679 background + SCALE)
+// We use simpler world-pixel coordinates matching the rendered bg
+const BG_SCALE = 2.679;
+function lvlX(x) { return Math.round(x * BG_SCALE); }
+function lvlY(y) { return Math.round(y * BG_SCALE); }
+
+const groundSegs = [
+  {x1:0,      x2:7909, y:GROUND_Y},
+  {x1:8157,   x2:9073, y:GROUND_Y},
+];
+
+// Platforms / solid rects (pipes, bricks, coin boxes, steps)
+// Format: {x, y, w, h, type} — type: ground|pipe|brick|coinbox|step|breakbrick
+const platforms = [];
+
+// Ground
+platforms.push({x:0,    y:GROUND_Y, w:7909, h:62,  type:'ground'});
+platforms.push({x:8157, y:GROUND_Y, w:1000, h:62,  type:'ground'});
+
+// Pipes
+const pipeData = [
+  [1202,452,83,148],[1631,409,83,191],[1973,366,83,234],[2445,366,83,234],
+  [6989,452,83,148],[7675,452,83,148]
+];
+pipeData.forEach(([x,y,w,h]) => platforms.push({
+  x:lvlX(x), y:lvlY(y), w:lvlX(w), h:lvlY(h), type:'pipe'
+}));
+
+// Steps
+const stepData = [
+  [5745,495,40,44],[5788,452,40,44],[5831,409,40,44],[5874,366,40,176],
+  [6001,366,40,176],[6044,408,40,40],[6087,452,40,40],[6130,495,40,40],
+  [6345,495,40,40],[6388,452,40,40],[6431,409,40,40],[6474,366,40,40],
+  [6517,366,40,176],[6644,366,40,176],[6687,408,40,40],[6728,452,40,40],
+  [6771,495,40,40],[7760,495,40,40],[7803,452,40,40],[7845,409,40,40],
+  [7888,366,40,40],[7931,323,40,40],[7974,280,40,40],[8017,237,40,40],
+  [8060,194,40,40],[8103,194,40,360],[8488,495,40,40],
+];
+stepData.forEach(([x,y,w,h]) => platforms.push({
+  x:lvlX(x), y:lvlY(y), w:lvlX(w), h:lvlY(h), type:'step'
+}));
+
+// Bricks
+const brickData = [
+  [858,365],[944,365],[1030,365],[3299,365],[3385,365],
+  [3430,193],[3473,193],[3516,193],[3559,193],[3602,193],[3645,193],[3688,193],[3731,193],
+  [3901,193],[3944,193],[3987,193],
+  [4030,365],[4287,365],[4330,365],[5058,365],
+  [5187,193],[5230,193],[5273,193],[5488,193],[5574,193],[5617,193],
+  [5531,365],[5574,365],[7202,365],[7245,365],[7331,365],
+];
+const bricks = brickData.map(([x,y]) => ({
+  x:lvlX(x), y:lvlY(y), w:lvlX(40), h:lvlY(40),
+  type:'brick', alive:true, bumping:false, bumpTimer:0
+}));
+
+// Coin boxes
+const coinBoxData = [
+  [685,365,'coin'],[901,365,'mushroom'],[987,365,'coin'],[943,193,'coin'],
+  [3342,365,'mushroom'],[4030,193,'coin'],[4544,365,'coin'],
+  [4672,365,'coin'],[4672,193,'mushroom'],[4800,365,'coin'],
+  [5531,193,'coin'],[7288,365,'coin'],
+];
+const coinBoxes = coinBoxData.map(([x,y,contents]) => ({
+  x:lvlX(x), y:lvlY(y), w:lvlX(40), h:lvlY(40),
+  type:'coinbox', alive:true, contents, bumping:false, bumpTimer:0, used:false
+}));
+
+// Flagpole
+const flagpole = {
+  x: lvlX(8505), y: lvlY(64), w: 6, h: lvlY(450),
+  flagY: lvlY(100), sliding: false
+};
+
+// ── Enemies ───────────────────────────────────────────────
+// Goomba sprite from smb_enemies_sheet.png
+const GOOMBA_FRAMES = [
+  {x:0, y:4, w:16, h:16},   // walk1
+  {x:16,y:4, w:16, h:16},   // walk2
+  {x:32,y:4, w:16, h:16},   // stomped
+];
+
+const enemySpawnData = [
+  {x:1600,  type:'goomba'},
+  {x:2100,  type:'goomba'},
+  {x:2500,  type:'goomba'},{x:2544,  type:'goomba'},
+  {x:3100,  type:'goomba'},{x:3144,  type:'goomba'},
+  {x:3800,  type:'goomba'},{x:3844,  type:'goomba'},
+  {x:4600,  type:'goomba'},
+  {x:5000,  type:'goomba'},{x:5044,  type:'goomba'},
+  {x:5500,  type:'goomba'},{x:5544,  type:'goomba'},
+  {x:7000,  type:'goomba'},{x:7044,  type:'goomba'},
+  {x:7500,  type:'goomba'},{x:7544,  type:'goomba'},
+];
+
+let enemies = enemySpawnData.map(d => ({
+  x: lvlX(d.x), y: GROUND_Y - lvlY(16),
+  w: lvlX(16), h: lvlY(16),
+  vx: -1.5, vy: 0,
+  type: d.type,
+  alive: true,
+  stomped: false,
+  stompTimer: 0,
+  animFrame: 0,
+  animTimer: 0,
+  onGround: false,
+}));
+
+// ── Coins (animated) ──────────────────────────────────────
+let flyingCoins = [];
+let floatingScores = [];
+
+function spawnCoin(x, y) {
+  flyingCoins.push({x, y, vy:-8, timer:0});
+  coins++;
+  score += 200;
+  spawnScore(x, y, 200);
+  playSound('coin');
+}
+
+function spawnScore(x, y, pts) {
+  floatingScores.push({x, y, pts, timer:0});
+}
+
+// ── Mushrooms ─────────────────────────────────────────────
+let mushrooms = [];
+
+function spawnMushroom(x, y) {
+  mushrooms.push({x, y, vx:2, vy:0, w:lvlX(16), h:lvlY(16), alive:true, onGround:false});
+  playSound('powerup_appears');
+}
+
+// ── HUD tiles (text_images.png) ───────────────────────────
+// Draw text using tile_set or text_images
+
+function drawHUD() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,800,40);
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 16px monospace';
+  ctx.fillText('MARIO', 60, 16);
+  ctx.fillText(String(score).padStart(6,'0'), 40, 32);
+
+  ctx.fillText('🪙×'+String(coins).padStart(2,'0'), 340, 24);
+
+  ctx.fillText('WORLD', 480, 16);
+  ctx.fillText('1-1', 492, 32);
+
+  ctx.fillText('TIME', 640, 16);
+  ctx.fillText(String(Math.max(0,timer)).padStart(3,' '), 648, 32);
+
+  // Lives
+  ctx.fillText('♥×'+lives, 180, 24);
+}
+
+// ── Collision helpers ─────────────────────────────────────
+function rectsOverlap(a, b) {
+  return a.x < b.x+b.w && a.x+a.w > b.x &&
+         a.y < b.y+b.h && a.y+a.h > b.y;
+}
+
+function getAllSolids() {
+  const solids = [...platforms];
+  bricks.forEach(b => { if(b.alive) solids.push(b); });
+  coinBoxes.forEach(c => { if(c.alive) solids.push(c); });
+  return solids;
+}
+
+function resolveCollision(entity, solids) {
+  entity.onGround = false;
+
+  // Move X
+  entity.x += entity.vx;
+  for (const s of solids) {
+    if (!rectsOverlap(entity, s)) continue;
+    if (entity.vx > 0) entity.x = s.x - entity.w;
+    else if (entity.vx < 0) entity.x = s.x + s.w;
+    entity.vx = 0;
+  }
+
+  // Move Y
+  entity.y += entity.vy;
+  for (const s of solids) {
+    if (!rectsOverlap(entity, s)) continue;
+    if (entity.vy > 0) {
+      entity.y = s.y - entity.h;
+      entity.vy = 0;
+      entity.onGround = true;
+    } else if (entity.vy < 0) {
+      entity.y = s.y + s.h;
+      // Hit block from below
+      if (s.type === 'brick' && !s.used) {
+        if (mario.big) {
+          s.alive = false;
+          playSound('brick');
+          score += 50;
+        } else {
+          s.bumping = true; s.bumpTimer = 0;
+          playSound('bump');
+        }
+      } else if (s.type === 'coinbox' && !s.used) {
+        s.used = true; s.bumping = true; s.bumpTimer = 0;
+        if (s.contents === 'coin') { spawnCoin(s.x + s.w/2, s.y); }
+        else if (s.contents === 'mushroom') { spawnMushroom(s.x, s.y - s.h); }
+        score += 200;
+      }
+      entity.vy = 0;
+    }
+  }
+}
+
+// ── Background drawing ────────────────────────────────────
+function drawBackground() {
+  if (!ASSETS.bg) {
+    ctx.fillStyle = '#5c94fc';
+    ctx.fillRect(0, 40, 800, 560);
+    return;
+  }
+  // level_1.png is 3392x224, scaled to ~9082x599
+  const bgW = 3392 * BG_SCALE;
+  const bgH = 224 * BG_SCALE;
+  const srcX = cameraX / BG_SCALE;
+  const srcW = SCREEN_W / BG_SCALE;
+  ctx.drawImage(ASSETS.bg, srcX, 0, srcW, 224, 0, 40, SCREEN_W, SCREEN_H-40);
+}
+
+// ── Draw platforms (for debug, normally bg handles this) ──
+function drawPlatforms() {
+  // pipes — draw from tile_set
+  // Normally the background image handles the visual rendering
+  // We just need the collision rects
+}
+
+// ── Draw enemies ──────────────────────────────────────────
+function drawEnemies() {
+  for (const e of enemies) {
+    if (!e.alive) continue;
+    const sx = e.x - cameraX;
+    if (sx < -40 || sx > 840) continue;
+    if (!ASSETS.enemies) {
+      ctx.fillStyle = '#a00';
+      ctx.fillRect(sx, e.y, e.w, e.h);
+      continue;
+    }
+    const f = e.stomped ? GOOMBA_FRAMES[2] :
+              GOOMBA_FRAMES[Math.floor(e.animFrame/8)%2];
+    ctx.drawImage(ASSETS.enemies, f.x, f.y, f.w, f.h, sx, e.y, e.w, e.h);
+  }
+}
+
+// ── Draw flying coins ─────────────────────────────────────
+function drawCoins() {
+  for (const c of flyingCoins) {
+    const sx = c.x - cameraX;
+    ctx.fillStyle = '#ffd700';
+    ctx.beginPath();
+    ctx.arc(sx, c.y, 8, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+// ── Draw mushrooms ────────────────────────────────────────
+function drawMushrooms() {
+  for (const m of mushrooms) {
+    if (!m.alive) continue;
+    const sx = m.x - cameraX;
+    if (!ASSETS.items) {
+      ctx.fillStyle = '#e00';
+      ctx.fillRect(sx, m.y, m.w, m.h);
+      continue;
+    }
+    // Mushroom in item_objects.png at x=0,y=0
+    ctx.drawImage(ASSETS.items, 0, 0, 16, 16, sx, m.y, m.w, m.h);
+  }
+}
+
+// ── Draw floating scores ──────────────────────────────────
+function drawScores() {
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 14px monospace';
+  for (const s of floatingScores) {
+    ctx.globalAlpha = Math.max(0, 1 - s.timer/40);
+    ctx.fillText(s.pts, s.x - cameraX, s.y);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ── Draw flagpole ─────────────────────────────────────────
+function drawFlagpole() {
+  const sx = flagpole.x - cameraX;
+  if (sx < -10 || sx > 810) return;
+  // Pole
+  ctx.fillStyle = '#888';
+  ctx.fillRect(sx, flagpole.y, 6, flagpole.h);
+  // Ball on top
+  ctx.fillStyle = '#ffd700';
+  ctx.beginPath();
+  ctx.arc(sx+3, flagpole.y, 8, 0, Math.PI*2);
+  ctx.fill();
+  // Flag
+  ctx.fillStyle = '#0a0';
+  ctx.fillRect(sx+6, flagpole.flagY, 32, 20);
+}
+
+// ── Title screen ──────────────────────────────────────────
+function drawTitle() {
+  if (ASSETS.title) {
+    ctx.drawImage(ASSETS.title, 0, 0, ASSETS.title.width, ASSETS.title.height,
+      0, 0, 800, 600);
+  } else {
+    ctx.fillStyle = '#5c94fc';
+    ctx.fillRect(0,0,800,600);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 40px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('SUPER MARIO BROS', 400, 200);
+    ctx.font = '20px monospace';
+    ctx.fillText('WORLD 1-1', 400, 280);
+  }
+  ctx.fillStyle = '#fff';
+  ctx.font = '18px monospace';
+  ctx.textAlign = 'center';
+  const blink = Math.floor(frameCount/30)%2===0;
+  if (blink) ctx.fillText('PRESS ANY KEY TO START', 400, 420);
+  ctx.textAlign = 'left';
+}
+
+// ── Game Over ─────────────────────────────────────────────
+function drawGameOver() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0,0,800,600);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 36px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('GAME OVER', 400, 280);
+  ctx.font = '18px monospace';
+  const blink = Math.floor(frameCount/30)%2===0;
+  if (blink) ctx.fillText('PRESS ANY KEY', 400, 340);
+  ctx.textAlign = 'left';
+}
+
+// ── Level Clear ───────────────────────────────────────────
+let clearTimer = 0;
+function drawLevelClear() {
+  drawBackground();
+  drawMario();
+  drawHUD();
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(0,0,800,600);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 30px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('COURSE CLEAR!', 400, 250);
+  ctx.font = '20px monospace';
+  ctx.fillText('TIME BONUS: '+(timer*50), 400, 310);
+  ctx.textAlign = 'left';
+}
+
+// ── Mario death animation ─────────────────────────────────
+let deathTimer = 0;
+function updateDeath() {
+  deathTimer++;
+  if (deathTimer === 60) { mario.vy = -12; }
+  if (deathTimer > 60) { mario.vy += 0.5; mario.y += mario.vy; }
+  if (deathTimer > 180) {
+    lives--;
+    if (lives <= 0) { state = 'gameover'; stopMusic(); playMusic('gameover', false); }
+    else { resetLevel(); }
+  }
+}
+
+// ── Reset ─────────────────────────────────────────────────
+function resetLevel() {
+  mario.x = 96; mario.y = GROUND_Y - 40;
+  mario.vx = 0; mario.vy = 0;
+  mario.big = false; mario.fire = false;
+  mario.dead = false; mario.invincible = false;
+  mario.state = 'stand';
+  cameraX = 0; timer = 400; deathTimer = 0;
+  enemies = enemySpawnData.map(d => ({
+    x:lvlX(d.x), y:GROUND_Y-lvlY(16), w:lvlX(16), h:lvlY(16),
+    vx:-1.5, vy:0, type:d.type, alive:true, stomped:false,
+    stompTimer:0, animFrame:0, animTimer:0, onGround:false,
+  }));
+  bricks.forEach(b => { b.alive=true; b.bumping=false; });
+  coinBoxes.forEach(c => { c.used=false; c.bumping=false; });
+  flyingCoins=[]; floatingScores=[]; mushrooms=[];
+  flagpole.flagY = lvlY(100); flagpole.sliding = false;
+  state = 'playing';
+  musicStarted = false;
+}
+
+// ── Update Mario ──────────────────────────────────────────
+function updateMario() {
+  if (mario.dead) { updateDeath(); return; }
+
+  // Start music on first input
+  if (!musicStarted && (isLeft()||isRight()||isJump())) {
+    musicStarted = true;
+    if (audioCtx) playMusic('theme');
+  }
+
+  const maxSpd = isRun() ? RUN_SPEED : WALK_SPEED;
+  const mw = mario.big ? 38 : 30;
+  const mh = mario.big ? 72 : 40;
+  mario.w = mw; mario.h = mh;
+
+  // Horizontal
+  if (isLeft()) {
+    mario.vx = Math.max(mario.vx - 0.3, -maxSpd);
+    mario.facingRight = false;
+    mario.state = 'walk';
+  } else if (isRight()) {
+    mario.vx = Math.min(mario.vx + 0.3, maxSpd);
+    mario.facingRight = true;
+    mario.state = 'walk';
+  } else {
+    mario.vx *= 0.85;
+    if (Math.abs(mario.vx) < 0.1) { mario.vx=0; mario.state='stand'; }
+  }
+
+  // Skid
+  if ((isLeft() && mario.vx>1) || (isRight() && mario.vx<-1)) mario.state='skid';
+
+  // Jump
+  if (isJump() && mario.onGround && !mario.jumpHeld) {
+    mario.vy = isRun() ? FAST_JUMP : JUMP_FORCE;
+    mario.onGround = false;
+    mario.jumpHeld = true;
+    playSound(mario.big ? 'jump_big' : 'jump_small');
+  }
+  if (!isJump()) mario.jumpHeld = false;
+
+  // Cut jump short
+  if (!isJump() && mario.vy < -4) mario.vy = Math.max(mario.vy + 1.5, -4);
+
+  // Gravity
+  mario.vy = Math.min(mario.vy + GRAVITY, MAX_FALL);
+
+  // Clamp
+  mario.x = Math.max(0, mario.x);
+
+  // Resolve collisions
+  resolveCollision(mario, getAllSolids());
+
+  // Camera
+  const targetCam = mario.x - 300;
+  cameraX = Math.max(0, Math.min(targetCam, LEVEL_W - SCREEN_W));
+
+  // Fall into pit
+  if (mario.y > 700) killMario();
+
+  // Invincibility
+  if (mario.invincible) {
+    mario.invTimer--;
+    if (mario.invTimer <= 0) mario.invincible = false;
+  }
+
+  // Animation
+  mario.animTimer++;
+  if (mario.animTimer > 6) { mario.animTimer=0; mario.animFrame++; }
+
+  // Timer countdown
+  timerTick++;
+  if (timerTick > 40) { timerTick=0; timer = Math.max(0, timer-1); }
+  if (timer === 0) killMario();
+}
+
+function killMario() {
+  if (mario.invincible) return;
+  mario.dead = true;
+  mario.vy = 0;
+  stopMusic();
+  playSound('death');
+  deathTimer = 0;
+}
+
+// ── Update Enemies ────────────────────────────────────────
+function updateEnemies() {
+  const solids = getAllSolids();
+  for (const e of enemies) {
+    if (!e.alive) continue;
+    const sx = e.x - cameraX;
+    if (sx < -200 || sx > 1000) continue; // off screen
+
+    if (e.stomped) {
+      e.stompTimer++;
+      if (e.stompTimer > 40) e.alive = false;
+      continue;
     }
 
-    async function custom_onload(debug_hidden) {
-        // this is called before anything python is loaded
-        // make your js customization here
-        console.log(__FILE__, "custom_onload")
+    e.vy = Math.min(e.vy + GRAVITY, MAX_FALL);
+    e.animTimer++;
+    if (e.animTimer > 8) { e.animTimer=0; e.animFrame++; }
 
-        pyconsole.hidden = debug_hidden
-        system.hidden = debug_hidden
-        transfer.hidden = debug_hidden
-        info.hidden = debug_hidden
-        box.hidden =  debug_hidden
-
-        show_infobox()
+    e.x += e.vx;
+    // Wall collision
+    for (const s of solids) {
+      if (rectsOverlap(e, s)) {
+        if (e.vx < 0) { e.x = s.x + s.w; e.vx *= -1; }
+        else           { e.x = s.x - e.w; e.vx *= -1; }
+      }
     }
-
-    function custom_prerun(){
-        // no python main and no (MEMFS + VFS) yet.
-        console.log(__FILE__, "custom_prerun")
-
+    e.y += e.vy;
+    e.onGround = false;
+    for (const s of solids) {
+      if (rectsOverlap(e, s)) {
+        if (e.vy > 0) { e.y = s.y - e.h; e.vy=0; e.onGround=true; }
+        else           { e.y = s.y + s.h; e.vy=0; }
+      }
     }
+    if (e.y > 700) { e.alive=false; continue; }
 
-    function custom_postrun(){
-        // python main and no VFS filesystem yet.
-        console.log(__FILE__, "custom_postrun")
-
+    // Mario vs enemy
+    if (!mario.dead && !mario.invincible && rectsOverlap(mario, e)) {
+      const prevBottom = mario.y + mario.h - mario.vy;
+      if (mario.vy > 0 && prevBottom <= e.y + 8) {
+        // Stomp
+        e.stomped = true; e.stompTimer = 0;
+        mario.vy = -7;
+        score += 100;
+        spawnScore(e.x, e.y, 100);
+        playSound('stomp');
+      } else {
+        // Hit
+        if (mario.big) {
+          mario.big = false;
+          mario.invincible = true; mario.invTimer = 120;
+          playSound('powerup');
+        } else {
+          killMario();
+        }
+      }
     }
+  }
+}
 
-    function debug() {
-        // allow to gain access to dev tools from js console
-        // but only on desktop. difficult to reach when in iframe
-        python.config.debug = true
-        custom_onload(false)
-        Module.PyRun_SimpleString("shell.uptime()")
-        window_resize()
+// ── Update Mushrooms ──────────────────────────────────────
+function updateMushrooms() {
+  const solids = getAllSolids();
+  for (const m of mushrooms) {
+    if (!m.alive) continue;
+    m.vy = Math.min(m.vy + GRAVITY, MAX_FALL);
+    m.x += m.vx;
+    m.y += m.vy;
+    m.onGround = false;
+    for (const s of solids) {
+      if (rectsOverlap(m,s)) {
+        if (m.vx > 0) { m.x=s.x-m.w; m.vx*=-1; }
+        else           { m.x=s.x+s.w; m.vx*=-1; }
+      }
     }
-
-    function info_inline(data){
-        document.getElementById("info").innerHTML = data
+    for (const s of solids) {
+      if (rectsOverlap(m,s)) {
+        if (m.vy>0) { m.y=s.y-m.h; m.vy=0; m.onGround=true; }
+        else         { m.y=s.y+s.h; m.vy=0; }
+      }
     }
-
-    function info_online(url) {
-        // display info about current APK
-        fetch( url /*, options */)
-            .then((response) => response.text())
-            .then((html) => {
-                info_inline(html);
-        })
-        .catch((error) => {
-            console.warn(error);
-        });
+    if (rectsOverlap(mario,m)) {
+      m.alive=false;
+      mario.big=true;
+      score+=1000;
+      spawnScore(m.x,m.y,1000);
+      playSound('powerup');
     }
+    if (m.y>700) m.alive=false;
+  }
+}
 
-    function frame_online(url) {
-        window.frames["iframe"].location = url;
+// ── Update flying coins ───────────────────────────────────
+function updateFlyingCoins() {
+  flyingCoins = flyingCoins.filter(c => {
+    c.vy += 0.5;
+    c.y += c.vy;
+    c.timer++;
+    return c.timer < 40;
+  });
+  floatingScores = floatingScores.filter(s => {
+    s.y -= 1; s.timer++;
+    return s.timer < 50;
+  });
+}
+
+// ── Update bump animations ────────────────────────────────
+function updateBumps() {
+  [...bricks, ...coinBoxes].forEach(b => {
+    if (b.bumping) {
+      b.bumpTimer++;
+      if (b.bumpTimer > 20) { b.bumping=false; b.bumpTimer=0; }
     }
+  });
+}
 
-    </script>
+// ── Flagpole logic ────────────────────────────────────────
+function checkFlagpole() {
+  const mRect = {x:mario.x, y:mario.y, w:mario.w, h:mario.h};
+  const pRect = {x:flagpole.x-4, y:flagpole.y, w:14, h:flagpole.h};
+  if (rectsOverlap(mRect, pRect) && state==='playing') {
+    state = 'flagslide';
+    stopMusic();
+    playSound('flagpole');
+    mario.vx=0;
+  }
+}
 
+function updateFlagSlide() {
+  mario.y = Math.min(mario.y+3, GROUND_Y - mario.h);
+  flagpole.flagY = Math.min(flagpole.flagY+3, flagpole.y+flagpole.h-20);
+  mario.x = flagpole.x - mario.w - 4;
+  mario.facingRight = false;
+
+  if (mario.y >= GROUND_Y - mario.h) {
+    mario.facingRight = true;
+    mario.x += mario.w + 8;
+    score += timer * 50;
+    timer = 0;
+    state = 'levelclear';
+    clearTimer = 0;
+    playMusic('stageclear', false);
+  }
+}
+
+// ── Main game loop ────────────────────────────────────────
+function update() {
+  frameCount++;
+
+  switch(state) {
+    case 'title':
+      drawTitle();
+      if (Object.values(keys).some(v=>v)) {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        resetLevel();
+      }
+      break;
+
+    case 'playing':
+      updateMario();
+      updateEnemies();
+      updateMushrooms();
+      updateFlyingCoins();
+      updateBumps();
+      checkFlagpole();
+      // Draw
+      drawBackground();
+      drawPlatforms();
+      drawEnemies();
+      drawMushrooms();
+      drawCoins();
+      drawFlagpole();
+      drawMario();
+      drawScores();
+      drawHUD();
+      break;
+
+    case 'dead':
+      updateDeath();
+      drawBackground();
+      drawHUD();
+      drawMario();
+      break;
+
+    case 'flagslide':
+      updateFlagSlide();
+      drawBackground();
+      drawFlagpole();
+      drawMario();
+      drawHUD();
+      break;
+
+    case 'levelclear':
+      clearTimer++;
+      drawLevelClear();
+      if (clearTimer > 200) {
+        // Restart with same lives
+        resetLevel();
+      }
+      break;
+
+    case 'gameover':
+      drawGameOver();
+      if (Object.values(keys).some(v=>v) && frameCount > 120) {
+        lives=3; score=0; coins=0;
+        resetLevel();
+      }
+      break;
+  }
+
+  requestAnimationFrame(update);
+}
+
+// ── Boot ──────────────────────────────────────────────────
+(async () => {
+  await loadAll();
+  state = 'title';
+  update();
+})();
+</script>
 </body>
 </html>
