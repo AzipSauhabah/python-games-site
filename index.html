@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>AzipSauhabah — Python Game Projects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,700;1,400&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:      #07070d;
+  --bg2:     #0d0d1a;
+  --panel:   #111120;
+  --border:  #1e1e3a;
+  --accent:  #e8ff00;
+  --red:     #ff3860;
+  --cyan:    #00e5ff;
+  --purple:  #b94fff;
+  --text:    #c8c8e0;
+  --dim:     #4a4a6a;
+  --white:   #f0f0ff;
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+  cursor: crosshair;
+}
+
+/* ── GRID BACKGROUND ── */
+body::before {
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(0,229,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── SCANLINES ── */
+body::after {
+  content:'';
+  position:fixed;inset:0;
+  background:repeating-linear-gradient(
+    0deg, transparent, transparent 3px,
+    rgba(0,0,0,.12) 3px, rgba(0,0,0,.12) 4px
+  );
+  pointer-events:none;
+  z-index:9998;
+}
+
+/* ─── HEADER ─────────────────────────────────── */
+header {
+  position: relative;
+  z-index: 10;
+  padding: 60px 40px 40px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.header-tag {
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--cyan);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: block;
+}
+
+h1 {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(28px, 5vw, 64px);
+  font-weight: 900;
+  color: var(--white);
+  line-height: 1;
+  letter-spacing: -1px;
+  text-shadow: 0 0 40px rgba(232,255,0,.3), 0 0 80px rgba(232,255,0,.1);
+}
+
+h1 span { color: var(--accent); }
+
+.header-sub {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--dim);
+  letter-spacing: 2px;
+}
+
+.header-stats {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 32px;
+}
+
+.stat {
+  text-align: center;
+}
+.stat-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+  display: block;
+}
+.stat-label {
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* ─── MARQUEE ─────────────────────────────────── */
+.marquee-wrap {
+  overflow: hidden;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  padding: 10px 0;
+  position: relative;
+  z-index: 10;
+}
+.marquee-track {
+  display: flex;
+  white-space: nowrap;
+  animation: marquee 25s linear infinite;
+  gap: 60px;
+}
+.marquee-track span {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--dim);
+  flex-shrink: 0;
+}
+.marquee-track span.hi { color: var(--accent); }
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ─── GRID DES JEUX ───────────────────────────── */
+.games-section {
+  position: relative;
+  z-index: 10;
+  padding: 60px 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.section-title {
+  font-family: 'Bebas Neue', monospace;
+  font-size: 13px;
+  letter-spacing: 6px;
+  color: var(--dim);
+  text-transform: uppercase;
+  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2px;
+}
+
+/* ─── CARTE JEU ───────────────────────────────── */
+.game-card {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 28px;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  overflow: hidden;
+  group: true;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(232,255,0,.04) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity .3s;
+}
+
+.game-card:hover {
+  border-color: var(--accent);
+  background: #141428;
+  z-index: 2;
+}
+.game-card:hover::before { opacity: 1; }
+
+/* Coin accent */
+.game-card::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 0; height: 0;
+  border-style: solid;
+  border-width: 0 32px 32px 0;
+  border-color: transparent var(--border) transparent transparent;
+  transition: border-color .2s;
+}
+.game-card:hover::after { border-color: transparent var(--accent) transparent transparent; }
+
+/* Badge état du jeu */
+.game-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 2px;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+.badge-playable {
+  background: rgba(232,255,0,.12);
+  color: var(--accent);
+  border: 1px solid rgba(232,255,0,.3);
+}
+.badge-soon {
+  background: rgba(74,74,106,.2);
+  color: var(--dim);
+  border: 1px solid var(--border);
+}
+.badge-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: blink 1.2s ease-in-out infinite;
+}
+.badge-soon .badge-dot { animation: none; }
+
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .2; }
+}
+
+.game-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+  display: block;
+  filter: grayscale(.4);
+  transition: filter .2s, transform .2s;
+}
+.game-card:hover .game-icon { filter: grayscale(0); transform: scale(1.1); }
+
+.game-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 8px;
+  letter-spacing: .5px;
+}
+
+.game-desc {
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.game-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.tag {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  text-transform: uppercase;
+}
+
+.game-controls {
+  font-size: 10px;
+  color: var(--dim);
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+.game-controls strong { color: var(--cyan); }
+
+.play-btn {
+  position: absolute;
+  bottom: 28px; right: 28px;
+  width: 40px; height: 40px;
+  border: 1px solid var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent);
+  font-size: 14px;
+  opacity: 0;
+  transform: scale(.8);
+  transition: opacity .2s, transform .2s, background .2s;
+}
+.game-card:hover .play-btn {
+  opacity: 1;
+  transform: scale(1);
+}
+.play-btn:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+/* ─── MODAL ───────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.92);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .3s;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal {
+  position: relative;
+  width: min(900px, 96vw);
+  background: var(--bg2);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 60px rgba(232,255,0,.15), 0 0 120px rgba(232,255,0,.05);
+  transform: translateY(20px) scale(.97);
+  transition: transform .3s;
+}
+.modal-overlay.active .modal {
+  transform: translateY(0) scale(1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+}
+
+.modal-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modal-title::before {
+  content: '▶';
+  font-size: 8px;
+  color: var(--accent);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--dim);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+  text-transform: uppercase;
+}
+.modal-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+.modal-btn.close-btn:hover { border-color: var(--red); color: var(--red); }
+
+/* Fenêtre du jeu */
+.game-frame-wrap {
+  position: relative;
+  background: #000;
+  line-height: 0;
+}
+
+/* Écran de chargement avant que pygbag démarre */
+.game-loading {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 5;
+  transition: opacity .5s;
+}
+.game-loading.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-logo {
+  font-family: 'Orbitron', monospace;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: 4px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50%      { opacity: .4; }
+}
+
+.loading-bar-wrap {
+  width: 240px;
+  height: 4px;
+  background: var(--border);
+  overflow: hidden;
+}
+.loading-bar {
+  height: 100%;
+  background: var(--accent);
+  animation: load 3s ease-out forwards;
+}
+@keyframes load {
+  0%   { width: 0%; }
+  60%  { width: 75%; }
+  80%  { width: 85%; }
+  100% { width: 100%; }
+}
+
+.loading-txt {
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* L'iframe du jeu */
+.game-iframe {
+  width: 100%;
+  aspect-ratio: 800 / 600;
+  border: none;
+  display: block;
+  background: #000;
+}
+
+/* Infos bas de modal */
+.modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.modal-keys {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.key-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--dim);
+}
+.kbd {
+  background: var(--border);
+  border: 1px solid #2a2a50;
+  border-bottom-width: 2px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 10px;
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+}
+.modal-source {
+  font-size: 10px;
+  color: var(--dim);
+}
+.modal-source a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+.modal-source a:hover { text-decoration: underline; }
+
+/* ─── FOOTER ──────────────────────────────────── */
+footer {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 40px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--dim);
+  letter-spacing: 2px;
+}
+footer a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+footer a:hover { color: var(--accent); }
+
+/* ─── RESPONSIVE ──────────────────────────────── */
+@media(max-width: 600px) {
+  header { padding: 40px 20px 30px; }
+  .games-section { padding: 40px 20px; }
+  .header-stats { gap: 24px; }
+  .modal-footer { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ────────────────────────── -->
+<header>
+  <span class="header-tag">AzipSauhabah / PythonProjects</span>
+  <h1>PYTHON<br/><span>GAME</span> ARCADE</h1>
+  <p class="header-sub">Jeux développés en Python · Pygame · WebAssembly</p>
+  <div class="header-stats">
+    <div class="stat">
+      <span class="stat-num">13</span>
+      <span class="stat-label">Jeux</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">1</span>
+      <span class="stat-label">Jouables</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">100%</span>
+      <span class="stat-label">Python</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── MARQUEE ────────────────────────── -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span class="hi">★ Mario</span><span>Pacman</span><span>Zelda</span>
+    <span class="hi">★ Street Fighter</span><span>Sonic</span><span>Tetris</span>
+    <span class="hi">★ OutRun</span><span>Kirby</span><span>R-Type</span>
+    <span class="hi">★ Metal Python</span><span>Royal Ordains</span><span>3D Realtime</span>
+    <span class="hi">★ Super Mario</span>
+    <!-- duplicate for seamless loop -->
+    <span class="hi">★ Mario</span><span>Pacman</span><span>Zelda</span>
+    <span class="hi">★ Street Fighter</span><span>Sonic</span><span>Tetris</span>
+    <span class="hi">★ OutRun</span><span>Kirby</span><span>R-Type</span>
+    <span class="hi">★ Metal Python</span><span>Royal Ordains</span><span>3D Realtime</span>
+    <span class="hi">★ Super Mario</span>
+  </div>
+</div>
+
+<!-- ── GRILLE DES JEUX ────────────────── -->
+<section class="games-section">
+  <div class="section-title">Sélection de jeux</div>
+  <div class="games-grid" id="games-grid"></div>
+</section>
+
+<!-- ── FOOTER ─────────────────────────── -->
+<footer>
+  <a href="https://github.com/AzipSauhabah/PythonProjects" target="_blank">github.com/AzipSauhabah/PythonProjects</a>
+  &nbsp;·&nbsp; Développé avec Python &amp; Pygame &nbsp;·&nbsp; Hébergé sur NAS Synology
+</footer>
+
+<!-- ── MODAL JEU ──────────────────────── -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Super Mario Bros — Level 1</div>
+      <div class="modal-actions">
+        <button class="modal-btn" onclick="toggleFullscreen()">Plein écran</button>
+        <button class="modal-btn" onclick="reloadGame()">↺ Restart</button>
+        <button class="modal-btn close-btn" onclick="closeModal()">✕ Fermer</button>
+      </div>
+    </div>
+
+    <div class="game-frame-wrap" id="game-frame-wrap">
+      <!-- Écran de chargement -->
+      <div class="game-loading" id="game-loading">
+        <div class="loading-logo" id="loading-logo">MARIO</div>
+        <div class="loading-bar-wrap">
+          <div class="loading-bar" id="loading-bar"></div>
+        </div>
+        <div class="loading-txt" id="loading-txt">Chargement WebAssembly...</div>
+      </div>
+      <!-- Iframe du jeu — src injecté par JS au clic -->
+      <iframe
+        class="game-iframe"
+        id="game-iframe"
+        allow="autoplay"
+        sandbox="allow-scripts allow-same-origin"
+        title="Jeu">
+      </iframe>
+    </div>
+
+    <div class="modal-footer">
+      <div class="modal-keys" id="modal-keys">
+        <div class="key-hint"><span class="kbd">←</span><span class="kbd">→</span> Déplacer</div>
+        <div class="key-hint"><span class="kbd">A</span> Sauter</div>
+        <div class="key-hint"><span class="kbd">S</span> Action / Courir</div>
+      </div>
+      <div class="modal-source">
+        Source : <a href="https://github.com/AzipSauhabah/PythonProjects/tree/main/Mario-Level-1-master" target="_blank">Mario-Level-1-master</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Données des jeux ─────────────────────────────────────────
+const GAMES = [
+  {
+    id: 'mario',
+    title: 'Mario Level 1',
+    icon: '🍄',
+    desc: 'Recréation fidèle du World 1-1 de Super Mario Bros. Plateformes, ennemis Goombas, champignons et drapeau final.',
+    tags: ['Plateformer', 'Pygame', 'WASM'],
+    playable: true,
+    gamePath: 'games/mario/index.html',
+    controls: [
+      { keys: ['←', '→'], action: 'Déplacer' },
+      { keys: ['A'],       action: 'Sauter' },
+      { keys: ['S'],       action: 'Action / Courir' },
+    ],
+    loadingLabel: 'MARIO',
+    sourceFolder: 'Mario-Level-1-master',
+  },
+  {
+    id: 'pacman',
+    title: 'Pacman',
+    icon: '👾',
+    desc: 'Le classique Pac-Man avec fantômes, pac-gommes et niveaux progressifs.',
+    tags: ['Arcade', 'Pygame'],
+    playable: false,
+    controls: [],
+    loadingLabel: 'PACMAN',
+    sourceFolder: 'Pacman-master',
+  },
+  {
+    id: 'zelda',
+    title: 'Zelda with Python',
+    icon: '⚔️',
+    desc: 'Aventure top-down inspirée de The Legend of Zelda avec exploration et combats.',
+    tags: ['RPG', 'Pygame'],
+    playable: false,
+    controls: [],
+    loadingLabel: 'ZELDA',
+    sourceFolder: 'Zelda-with-Python-main',
+  },
+  {
+    id: 'street-fighter',
+    title: 'Street Fighter',
+    icon: '🥊',
+    desc: 'Jeu de combat 2D avec sprites animés et système de combos.',
+    tags: ['Combat', 'Pygame'],
+    playable: false,
+    controls: [],
+    loadingLabel: 'STREET FIGHTER',
+    sourceFolder: 'Street_Fighter_Game-master',
+  },
+  {
+    id: 'sonic',
+    title: 'Sonic Pygame',
+    icon: '💨',
+    desc: 'Sonic the Hedgehog recréé en Python — vitesse, anneaux et loops.',
+    tags: ['Plateformer', 'Pygame'],
+    playable: false,
+    controls: [],
+    loadingLabel: 'SONIC',
+    sourceFolder: 'sonic-pygame',
+  },
+  {
+    id: 'tetris',
+    title: 'PyTetris',
+    icon: '🟦',
+    desc: 'Tetris complet avec niveaux de difficulté croissants et score.',
+    tags: ['Puzzle', 'Pygame'],
+    playable: false,
+    controls: [],
+    loadingLabel: 'TETRIS',
+    sourceFolder: 'PyTetris-master',
+  },
+  {
+    id: 'outrun',
+    title: 'OutRun',
+    icon: '🏎️',
+    desc: 'Course pseudo-3D à la OutRun avec scrolling de route et décors.',
+    tags: ['Racing', 'Pygame'],
+    playable: false,
+    controls: [],
+    loadingLabel: 'OUTRUN',
+    sourceFolder: 'OutRun-master',
+  },
+  {
+    id: 'kirby',
+    title: 'Kirby',
+    icon: '⭐',
+    desc: 'Kirby plateformer — aspiration d\'ennemis et pouvoirs copiés.',
+    tags: ['Plateformer', 'Pygame'],
+    playable: false,
+    controls: [],
+    loadingLabel: 'KIRBY',
+    sourceFolder: 'Kirby-master',
+  },
+  {
+    id: 'rtype',
+    title: 'R-Typo',
+    icon: '🚀',
+    desc: 'Shoot\'em up horizontal inspiré de R-Type avec vagues d\'ennemis.',
+    tags: ['Shoot\'em up', 'Pygame'],
+    playable: false,
+    controls: [],
+    loadingLabel: 'R-TYPE',
+    sourceFolder: 'R-Typo-master',
+  },
+  {
+    id: 'metal',
+    title: 'Metal Python',
+    icon: '🔫',
+    desc: 'Run & Gun inspiré de Metal Slug — action et explosions.',
+    tags: ['Action', 'Pygame'],
+    playable: false,
+    controls: [],
+    loadingLabel: 'METAL PYTHON',
+    sourceFolder: 'MetalPython-master',
+  },
+  {
+    id: 'supermario',
+    title: 'Super Mario Python',
+    icon: '🌟',
+    desc: 'Autre implémentation complète de Super Mario Bros en Python.',
+    tags: ['Plateformer', 'Pygame'],
+    playable: false,
+    controls: [],
+    loadingLabel: 'SUPER MARIO',
+    sourceFolder: 'super-mario-python-master',
+  },
+  {
+    id: 'royalordains',
+    title: 'Royal Ordains',
+    icon: '👑',
+    desc: 'Jeu de stratégie / RPG avec système de commandements royaux.',
+    tags: ['Stratégie', 'Pygame'],
+    playable: false,
+    controls: [],
+    loadingLabel: 'ROYAL ORDAINS',
+    sourceFolder: 'Royal-Ordains-main',
+  },
+  {
+    id: '3d',
+    title: 'RealTime 3D',
+    icon: '🌐',
+    desc: 'Rendu 3D temps réel en Python — moteur de rastérisation sans GPU.',
+    tags: ['3D', 'Python'],
+    playable: false,
+    controls: [],
+    loadingLabel: '3D ENGINE',
+    sourceFolder: 'RealTime3DwithPython-master',
+  },
+];
+
+// ── Rendu de la grille ───────────────────────────────────────
+const grid = document.getElementById('games-grid');
+GAMES.forEach(game => {
+  const card = document.createElement('div');
+  card.className = 'game-card';
+  card.setAttribute('role', 'button');
+  card.setAttribute('tabindex', '0');
+  card.setAttribute('aria-label', `Jouer à ${game.title}`);
+
+  const badgeClass = game.playable ? 'badge-playable' : 'badge-soon';
+  const badgeLabel = game.playable ? 'Jouable' : 'Bientôt';
+
+  const controlsHTML = game.controls.length
+    ? `<div class="game-controls">${game.controls.map(c =>
+        `<strong>${c.keys.join(' + ')}</strong> ${c.action}`
+      ).join(' &nbsp;·&nbsp; ')}</div>`
+    : `<div class="game-controls" style="color:var(--dim);font-style:italic">Bientôt disponible en WASM</div>`;
+
+  card.innerHTML = `
+    <div class="game-badge ${badgeClass}">
+      <span class="badge-dot"></span>${badgeLabel}
+    </div>
+    <span class="game-icon">${game.icon}</span>
+    <div class="game-title">${game.title}</div>
+    <div class="game-desc">${game.desc}</div>
+    <div class="game-tags">${game.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+    ${controlsHTML}
+    ${game.playable ? '<div class="play-btn">▶</div>' : ''}
+  `;
+
+  if (game.playable) {
+    card.addEventListener('click', () => openGame(game));
+    card.addEventListener('keydown', e => { if (e.key === 'Enter') openGame(game); });
+  }
+
+  grid.appendChild(card);
+});
+
+// ── Modal ────────────────────────────────────────────────────
+let currentGame = null;
+let loadingTimer = null;
+
+function openGame(game) {
+  currentGame = game;
+
+  // Titre modal
+  document.getElementById('modal-title').textContent = game.title;
+
+  // Contrôles
+  const keysEl = document.getElementById('modal-keys');
+  keysEl.innerHTML = game.controls.map(c =>
+    `<div class="key-hint">${c.keys.map(k => `<span class="kbd">${k}</span>`).join('')}<span>${c.action}</span></div>`
+  ).join('');
+
+  // Reset écran de chargement
+  const loading = document.getElementById('game-loading');
+  const bar     = document.getElementById('loading-bar');
+  const logo    = document.getElementById('loading-logo');
+  const txt     = document.getElementById('loading-txt');
+  loading.classList.remove('hidden');
+  logo.textContent = game.loadingLabel;
+  bar.style.animation = 'none';
+  bar.offsetHeight; // reflow
+  bar.style.animation = 'load 3s ease-out forwards';
+  txt.textContent = 'Chargement WebAssembly...';
+
+  // Injecter l'iframe
+  const iframe = document.getElementById('game-iframe');
+  iframe.src = '';
+  iframe.src = game.gamePath;
+
+  // Masquer le loader quand l'iframe est chargée
+  clearTimeout(loadingTimer);
+  iframe.onload = () => {
+    loadingTimer = setTimeout(() => loading.classList.add('hidden'), 500);
+  };
+  // Fallback : masquer après 6s max
+  loadingTimer = setTimeout(() => loading.classList.add('hidden'), 6000);
+
+  // Ouvrir la modal
+  document.getElementById('modal-overlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('active');
+  document.body.style.overflow = '';
+  // Stopper le jeu en vidant l'iframe
+  setTimeout(() => {
+    document.getElementById('game-iframe').src = '';
+    if (currentGame) {
+      document.getElementById('game-loading').classList.remove('hidden');
+    }
+  }, 300);
+  clearTimeout(loadingTimer);
+  currentGame = null;
+}
+
+function reloadGame() {
+  if (!currentGame) return;
+  const iframe = document.getElementById('game-iframe');
+  const loading = document.getElementById('game-loading');
+  loading.classList.remove('hidden');
+  const bar = document.getElementById('loading-bar');
+  bar.style.animation = 'none';
+  bar.offsetHeight;
+  bar.style.animation = 'load 3s ease-out forwards';
+  iframe.src = '';
+  iframe.src = currentGame.gamePath;
+  clearTimeout(loadingTimer);
+  loadingTimer = setTimeout(() => loading.classList.add('hidden'), 6000);
+}
+
+function toggleFullscreen() {
+  const wrap = document.getElementById('game-frame-wrap');
+  if (!document.fullscreenElement) {
+    wrap.requestFullscreen && wrap.requestFullscreen();
+  } else {
+    document.exitFullscreen && document.exitFullscreen();
+  }
+}
+
+// Fermer sur clic overlay ou Escape
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>
